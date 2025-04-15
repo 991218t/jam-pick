@@ -9,12 +9,9 @@ import SwiftUI
 
 @main
 struct Jam_PickApp: App {
-    let persistenceController = PersistenceController.shared
-
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environment(\.managedObjectContext, persistenceController.container.viewContext)
+            JamHomeView() // 앱 실행시 처음 띄우는 것 !
         }
     }
 }
