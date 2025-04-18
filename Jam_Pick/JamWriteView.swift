@@ -4,94 +4,127 @@
 //
 //  Created by 지구 on 4/13/25.
 //
-
 import SwiftUI
 
+extension JamType {
+    var category: JamCategory {
+        switch self {
+        case .honey: return .honey
+        case .strawberry: return .strawberry
+        case .kiwi: return .kiwi
+        case .chestnut: return .chestnut
+        }
+    }
+
+    var imageName: String {
+        return category.imageName
+    }
+
+    var color: Color {
+        return category.color
+    }
+}
+
 struct JamWriteView: View {
-    let jamType: JamType // 선택된 잼 타입 전달 -
+    let jamType: JamType
     
+    @EnvironmentObject var navigationModel: NavigationModel
+    @Environment(\.dismiss) var dismiss
     @State private var title: String = ""
     @State private var content: String = ""
-    
     @FocusState private var isTitleFocused: Bool
     @FocusState private var isContentFocused: Bool
     
     var body: some View {
         VStack {
-            VStack(spacing:0) {
-                // 아이콘
-                Image(jamType.icon)
+            VStack(spacing: 0) {
+                Image(jamType.imageName)
                     .resizable()
                     .scaledToFit()
                     .frame(width: 37, height: 45)
 
-                
-                // 제목입력창
                 ZStack(alignment: .center) {
                     if title.isEmpty && !isTitleFocused {
                         Text("잼얘 제목을 입력해주세요")
                             .jamTitleStyle()
                     }
-        
+                    
                     TextField("", text: $title)
                         .jamTitleStyle()
                         .focused($isTitleFocused)
+                        .textFieldStyle(.plain)
+                        .multilineTextAlignment(.center)
+                        .tint(jamType.color)
                         .padding(.vertical, 10)
-                        .textFieldStyle(PlainTextFieldStyle())
                 }
+                .frame(maxWidth: .infinity)
                 .padding(.top, 10)
-                .frame(maxWidth: .infinity, alignment: .center)
-                
-                // 본문 입력 (내용 박스!)
-                ZStack {
+
+                ZStack(alignment: .topLeading) {
                     RoundedRectangle(cornerRadius: 10)
                         .fill(Color.BackgroundAccent)
                     
                     TextEditor(text: $content)
                         .font(.jamBody)
                         .foregroundColor(.textNormal)
-                        .padding(20) // 안쪽 여백
+                        .padding(20)
                         .background(Color.clear)
                         .focused($isContentFocused)
-                        .tint(Color.JamHoney)
+                        .tint(jamType.color)
                     
                     if content.isEmpty && !isContentFocused {
                         Text("잼얘의 내용을 입력해주세요!")
-                            .foregroundColor(.textNormal)
                             .font(.jamBody)
+                            .foregroundColor(.textNormal)
+                            .tracking(-0.5)
+                            .lineSpacing(6)
                             .padding(20)
-                        
                     }
                 }
+                .frame(width: 345, height: 404)
                 .cornerRadius(10)
                 .clipped()
-                .padding(.top,20)
-                .frame(maxWidth: .infinity, maxHeight: 404 ,alignment: .center)
+                .shadow(color: Color("Shadow").opacity(0.4), radius: 20)
+                .padding(.top, 20)
+                
+                
+                Spacer()
             }
-            .frame(maxHeight: .infinity,alignment: .top)
-            .padding(.top, 84)
-          
-    //        .navigationBarTitleDisplayMode(.inline)
-    //        .navigationBarItems(
-    //            leading: Button(action: {
-    //                // 뒤로가기~
-    //            }) {
-    //                Image(systemName: "arrow.left.circle.fill")
-    //                    .font(.title)
-    //            },
-    //            trailing: Button(action: {
-    //                // 저장 !!
-    //            }) {
-    //                Text("저장")
-    //                    .fontWeight(.bold)
-    //            }
-    //        )
+            .padding(.horizontal, 24)
+            .padding(.top, 30)
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarBackButtonHidden(true)
+            .background(Color.BackgroundColor.ignoresSafeArea())
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action : {
+                        dismiss()
+                    }) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundColor(.textBold)
+                            .padding(.leading, 8)
+                    }
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        let newJam = Jam(id: UUID(), title: title, content: content, date: Date(), jamtype: jamType)
+                        JamStorage.save(jam: newJam)
+                        navigationModel.path = []
+                        dismiss() // 저장 후 홈으로 돌아가기
+                    }) {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundColor(.textBold)
+                            .padding(.trailing, 8)
+                    }
+                }
+            }
         }
-        .padding([.leading, .trailing], 24)
-        .background(Color.BackgroundColor)
     }
 }
 
 #Preview {
     JamWriteView(jamType: .honey)
+        .environmentObject(NavigationModel())
 }

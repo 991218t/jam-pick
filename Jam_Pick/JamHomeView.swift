@@ -8,91 +8,118 @@
 import SwiftUI
 
 struct JamHomeView: View {
-    @State private var jams: [Jam] = sampleJams
-    @State private var randomJam: Jam? = nil
-    @State private var showWriteView = false // 나중에 네비게이션 링크로!
-    
+    @State private var jams: [Jam] = JamStorage.load()
+    @State private var path: [Route] = []
+
     var body: some View {
-        NavigationView {
-            VStack {
-                // 랜덤 잼 푸기 버튼
-                Button(action: {
-                    if !jams.isEmpty {
-                        randomJam = jams.randomElement()
-                    }
-                }) {
-                    Image("Random")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(height : 30)
-                        .background(Color.jamStrawberry.opacity(0.3)) //일단 딸기색 활용
-                        .padding(.horizontal)
-                        .cornerRadius(100)
-                }
-                .padding(.top)
+        NavigationStack(path: $path) {
+            ZStack(alignment: .topTrailing) {
                 
-                // 랜덤 잼이 있을 경우 표시
-                if let jam = randomJam {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(jam.title)
-                            .font(.bodyStyle)
-                            .foregroundColor(.textBold)
-                            .bold()
-                        Text(jam.content)
-                            .font(.bodyStyle)
-                            .foregroundColor(.textBold)
-                            .lineLimit(2)
-                    }
-                    .padding()
-                    .background(Color.backgroundAccent)
-                    .cornerRadius(12)
-                    .padding(.horizontal)
-                }
+                // 배경
+                Color.BackgroundColor.ignoresSafeArea()
 
-                // 잼 리스트
-                ScrollView {
-                    VStack(spacing: 0) {
-                        ForEach(jams) { jam in
-                            NavigationLink(destination: JamDetailView(jam: jam)) {
-                                Text(jam.title)
-                                    .font(.bodyStyle)
-                                    .foregroundColor(.textBold)
-                                    .padding(.vertical, 12)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .background(Color.white) // 필요시 배경 추가
+                VStack {
+                    Spacer().frame(height: 120)
+
+                    // 랜덤 버튼
+                    CustomJamButton(imageName: "Random")
+                        .onTapGesture {
+                            if let randomJam = jams.randomElement() {
+                                path.append(.detail(randomJam))
                             }
-                            .buttonStyle(PlainButtonStyle()) // 완전한 클릭 스타일로 변경
-                            Divider() // 구분선 (선택사항)
                         }
-                    }
-                    .padding(.horizontal)
-                }
-
+                        .padding(.bottom, 10)
                     
-                .scrollContentBackground(.hidden) // 리스트 배경 제거
-                .background(Color.BackgroundColor) // 전체 배경 통일
-                
-            }
-            .background(Color.BackgroundColor.ignoresSafeArea())
-            .toolbar {
-                            ToolbarItem(placement: .principal) {
-                                Image("HomeTitle")
-                                    .resizable()
-                                    .scaledToFit()
-                                    .frame(height: 34)
-                            }
-                            ToolbarItem(placement: .navigationBarTrailing) {
-                                Button(action: {
-                                    showWriteView = true
-                                }) {
-                                    Image(systemName: "plus")
-                                        .foregroundColor(.textBold)
+                    // 글이 있을 때와 없을 때 조건 처리
+                    if jams.isEmpty {
+                        VStack {
+                            Spacer()
+                            Text("작성된 잼이 없어요 🍓")
+                                .font(.bodyStyle)
+                                .foregroundColor(.textLight)
+                            Spacer()
+                        }
+                        .frame(maxWidth: .infinity)
+                    } else {
+                        ScrollView {
+                            VStack(spacing: 0) {
+                                ForEach(jams) { jam in
+                                    NavigationLink(value: Route.detail(jam)) {
+                                        ZStack {
+                                            RoundedRectangle(cornerRadius: 10)
+                                                .fill(Color.white)
+                                                .frame(height: 70)
+
+                                            HStack {
+                                                Text(jam.title)
+                                                    .font(.bodyStyle)
+                                                    .foregroundColor(.TextBold)
+                                                    .padding(.leading, 20)
+                                                Spacer()
+                                            }
+                                        }
+                                        .padding(.vertical, 0)
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+
+                                    Divider()
+                                        .frame(height: 0.4)
+                                        .background(Color.TextLight.opacity(0.05))
+                                        .padding(.horizontal, 8)
                                 }
                             }
+                            .padding(.horizontal)
                         }
+                        .scrollContentBackground(.hidden)
                     }
                 }
+
+                // 중앙 타이틀 고정
+                VStack {
+                    Spacer().frame(height: 60)
+                    HStack {
+                        Spacer()
+                        Image("MainTitle")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 34)
+                        Spacer()
+                    }
+                }
+
+                // 우측 상단 + 버튼
+                VStack {
+                    Button(action: {
+                        path.append(.typeSelect)
+                    }) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundColor(.textBold)
+                            .padding(.trailing, 8)
+                    }
+                    .padding(.trailing, 16)
+                    .padding(.top, 16) // <- Safe area 겹침 방지
+                }
             }
-        #Preview {
-        JamHomeView()
+            .navigationDestination(for: Route.self) { route in
+                switch route {
+                case .typeSelect:
+                    JamTypeView { selectedCategory in
+                        path.append(.write(selectedCategory))
+                    }
+                case .write(let category):
+                    JamWriteView(jamType: category)
+                case .detail(let jam):
+                    JamDetailView(jam: jam)
+                }
+            }
+            .onAppear {
+                jams = JamStorage.load()
+            }
         }
+    }
+}
+
+#Preview {
+    JamHomeView()
+}

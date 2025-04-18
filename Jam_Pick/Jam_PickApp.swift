@@ -8,10 +8,14 @@
 import SwiftUI
 
 @main
-struct Jam_PickApp: App {
+struct JamPickApp: App {
+    @StateObject var navigationModel = NavigationModel() // NavigationModel 객체 생성
+
     var body: some Scene {
         WindowGroup {
-            JamHomeView() // 앱 실행시 처음 띄우는 것 !
+            JamHomeView()
+                .environmentObject(navigationModel) // 환경 객체로 주입
         }
     }
 }
+

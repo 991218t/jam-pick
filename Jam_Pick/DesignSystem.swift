@@ -44,3 +44,32 @@ extension View {
             .multilineTextAlignment(.center) // 가운데 정렬
     }
 }
+
+struct CustomJamButton: View {
+    var imageName: String
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 120)
+                .stroke(Color(.textBold), lineWidth: 0.8)
+                    .background(
+                        RadialGradient(colors: [.graYPink, .graPink],
+                                       center: .center,
+                                       startRadius: 2,
+                                       endRadius: 90)
+                        .scaleEffect(x: 2, y: 1) // 가로로 늘려서 타원형처럼 보이게!
+                        .clipShape(RoundedRectangle(cornerRadius: 120)) // 모양을 다시 맞춰주기!
+                    )
+                    .frame(width: 200, height: 45)
+                    
+            Image(imageName)
+                .resizable()
+                .scaledToFit()
+                .padding(.horizontal, 31)
+                .padding(.top, 7)
+                .padding(.bottom, 5)
+                .frame(width: 200, height: 45)
+        }
+        .shadow(color: Color("Shadow").opacity(0.4), radius: 20, x: 0, y: 0)
+    }
+}
